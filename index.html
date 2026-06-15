@@ -202,6 +202,22 @@
   /* help button */
   .help{position:absolute;top:54px;right:18px;z-index:15;background:var(--surface);border:1px solid var(--hairline);border-radius:999px;padding:8px 14px;font-family:inherit;font-size:14px;font-weight:800;color:var(--clay);box-shadow:var(--shadow-sm);cursor:pointer;display:flex;align-items:center;gap:6px;}
   .help svg{width:16px;height:16px;fill:var(--clay);}
+
+  /* pin lock */
+  .pin-dots{display:flex;gap:16px;justify-content:center;margin:26px 0 4px;}
+  .pin-dots .pd{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--hairline);transition:background .15s ease,border-color .15s ease;}
+  .pin-dots .pd.filled{background:var(--clay);border-color:var(--clay);}
+  .pin-error{text-align:center;color:var(--concern);font-weight:800;font-size:16px;min-height:22px;margin-top:2px;}
+  .shake{animation:shake .42s;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-9px);}40%,80%{transform:translateX(9px);}}
+  @media(prefers-reduced-motion:reduce){.shake{animation:none;}}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:316px;margin:0 auto;}
+  .key{height:72px;border:none;border-radius:20px;background:var(--surface);box-shadow:var(--shadow-sm);font-family:inherit;font-size:30px;font-weight:800;color:var(--ink);cursor:pointer;transition:transform .1s ease,background .12s ease;}
+  .key:active{transform:scale(.94);background:var(--paper);}
+  .key:focus-visible{outline:4px solid rgba(226,97,60,.4);outline-offset:2px;}
+  .key.blank{background:transparent;box-shadow:none;cursor:default;}
+  .key.back{background:transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;}
+  .key.back svg{width:30px;height:30px;fill:var(--muted);}
 </style>
 </head>
 <body>
@@ -213,8 +229,37 @@
 
   <div class="screens">
 
+    <!-- 0. PIN LOCK -->
+    <section class="screen active" id="s-pin">
+      <div class="eyebrow" style="margin-top:30px">Meals on Wheels · Greater Spokane</div>
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 11h14M5 11a7 7 0 0114 0M12 4V2M3 11v2a2 2 0 002 2h14a2 2 0 002-2v-2M7 18h10" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1 style="font-size:29px">Enter your<br>driver PIN</h1>
+      <p class="lead" style="font-size:17px">Your 6-digit code keeps neighbors' information safe.</p>
+      <div class="pin-dots" id="pindots"></div>
+      <div class="pin-error" id="pinerror"></div>
+      <div class="spacer"></div>
+      <div class="keypad">
+        <button class="key" onclick="pinPress('1')">1</button>
+        <button class="key" onclick="pinPress('2')">2</button>
+        <button class="key" onclick="pinPress('3')">3</button>
+        <button class="key" onclick="pinPress('4')">4</button>
+        <button class="key" onclick="pinPress('5')">5</button>
+        <button class="key" onclick="pinPress('6')">6</button>
+        <button class="key" onclick="pinPress('7')">7</button>
+        <button class="key" onclick="pinPress('8')">8</button>
+        <button class="key" onclick="pinPress('9')">9</button>
+        <button class="key blank" tabindex="-1" aria-hidden="true"></button>
+        <button class="key" onclick="pinPress('0')">0</button>
+        <button class="key back" onclick="pinBack()" aria-label="Delete last digit"><svg viewBox="0 0 24 24"><path d="M22 5H8.5a2 2 0 00-1.5.7L1 12l6 6.3a2 2 0 001.5.7H22a2 2 0 002-2V7a2 2 0 00-2-2zm-3.3 10.3L17.3 16.7 14 13.4l-3.3 3.3-1.4-1.4L12.6 12 9.3 8.7l1.4-1.4L14 10.6l3.3-3.3 1.4 1.4L15.4 12z"/></svg></button>
+      </div>
+      <button class="btn btn-ghost" onclick="callOffice()">Forgot your PIN? Call the office</button>
+      <div style="height:12px"></div>
+    </section>
+
     <!-- 1. WELCOME -->
-    <section class="screen active" id="s-welcome">
+    <section class="screen" id="s-welcome">
       <div class="eyebrow">Meals on Wheels · Greater Spokane</div>
       <div class="mark">
         <svg viewBox="0 0 24 24" fill="none"><path d="M5 11h14M5 11a7 7 0 0114 0M12 4V2M3 11v2a2 2 0 002 2h14a2 2 0 002-2v-2M7 18h10" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -401,6 +446,41 @@
   function openSheet(){ document.getElementById('sheetbg').classList.add('show'); document.getElementById('sheet').classList.add('show'); }
   function closeSheet(){ document.getElementById('sheetbg').classList.remove('show'); document.getElementById('sheet').classList.remove('show'); }
   function reportConcern(msg){ closeSheet(); showToast("Thank you \u2014 the office has been notified"); }
+
+  // --- PIN lock (prototype: client-side only, for demo) ---
+  const DEMO_PIN = "123456";
+  let pinEntry = "";
+  function renderDots(){
+    const c=document.getElementById('pindots'); c.innerHTML='';
+    for(let i=0;i<6;i++){
+      const d=document.createElement('div');
+      d.className='pd'+(i<pinEntry.length?' filled':'');
+      c.appendChild(d);
+    }
+  }
+  function pinPress(n){
+    if(pinEntry.length>=6) return;
+    document.getElementById('pinerror').textContent='';
+    pinEntry+=n; renderDots();
+    if(pinEntry.length===6) setTimeout(checkPin,180);
+  }
+  function pinBack(){
+    pinEntry=pinEntry.slice(0,-1);
+    document.getElementById('pinerror').textContent='';
+    renderDots();
+  }
+  function checkPin(){
+    if(pinEntry===DEMO_PIN){
+      pinEntry=''; renderDots(); go('s-welcome');
+    } else {
+      const dots=document.getElementById('pindots');
+      dots.classList.add('shake');
+      document.getElementById('pinerror').textContent="That PIN didn't match. Try again.";
+      setTimeout(()=>{ dots.classList.remove('shake'); pinEntry=''; renderDots(); },460);
+    }
+  }
+  function callOffice(){ showToast("Calling the Meals on Wheels office\u2026"); }
+  renderDots();
 
   // live-ish clock for realism
   function tick(){
