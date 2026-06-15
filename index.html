@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Meals on Wheels · Driver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF6EF;        /* warm background, opposite of the cold FSL navy */
+    --surface:#FFFFFF;
+    --ink:#2A2420;          /* warm charcoal */
+    --muted:#8C8178;
+    --hairline:#ECE3D8;
+    --clay:#E2613C;         /* primary warm action */
+    --clay-press:#C9512F;
+    --teal:#1E7A6B;         /* delivered / success */
+    --teal-soft:#E4F1ED;
+    --amber:#D98A2B;        /* no answer / caution */
+    --amber-soft:#FBEFD9;
+    --concern:#B5472F;
+    --shadow:0 10px 30px rgba(60,40,25,.12);
+    --shadow-sm:0 4px 14px rgba(60,40,25,.10);
+    --r-lg:26px;
+    --r-md:18px;
+    --tap:60px;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Nunito",system-ui,-apple-system,sans-serif;
+    background:#efe7dc;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Phone frame on desktop; full-bleed on real phones */
+  .device{
+    width:100%;max-width:430px;height:100vh;max-height:932px;
+    background:var(--paper);
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  @media(min-width:480px){
+    .device{
+      height:90vh;border-radius:44px;
+      box-shadow:0 40px 80px rgba(40,25,15,.35);
+      border:10px solid #15110d;
+    }
+  }
+
+  /* faux status bar */
+  .statusbar{
+    flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;
+    padding:14px 26px 6px;font-size:14px;font-weight:800;color:var(--ink);
+  }
+  .statusbar .dots{display:flex;gap:5px;align-items:center;}
+  .statusbar .pill{background:var(--ink);color:#fff;border-radius:8px;padding:1px 7px;font-size:11px;}
+
+  /* screen system */
+  .screens{flex:1 1 auto;position:relative;overflow:hidden;}
+  .screen{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    padding:8px 22px 0;opacity:0;transform:translateX(24px);
+    pointer-events:none;transition:opacity .32s ease,transform .32s ease;
+    overflow-y:auto;
+  }
+  .screen.active{opacity:1;transform:none;pointer-events:auto;}
+  @media(prefers-reduced-motion:reduce){
+    .screen{transition:none;transform:none;}
+  }
+
+  .eyebrow{font-size:15px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--clay);margin:18px 0 2px;}
+  h1{font-size:33px;line-height:1.12;font-weight:900;margin:0 0 6px;letter-spacing:-.02em;}
+  .lead{font-size:19px;line-height:1.4;color:var(--muted);font-weight:600;margin:0 0 8px;}
+
+  .spacer{flex:1 1 auto;min-height:12px;}
+
+  /* big primary button, thumb-anchored */
+  .footer{flex:0 0 auto;padding:14px 22px calc(20px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--paper) 70%,transparent);}
+  .btn{
+    width:100%;min-height:var(--tap);border:none;border-radius:var(--r-md);
+    font-family:inherit;font-size:20px;font-weight:800;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    transition:transform .12s ease,background .15s ease;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn:focus-visible{outline:4px solid rgba(226,97,60,.4);outline-offset:3px;}
+  .btn-primary{background:var(--clay);color:#fff;box-shadow:var(--shadow-sm);}
+  .btn-primary:active{background:var(--clay-press);}
+  .btn-teal{background:var(--teal);color:#fff;}
+  .btn-amber{background:var(--surface);color:var(--amber);border:2px solid var(--amber);}
+  .btn-ghost{background:transparent;color:var(--muted);font-size:17px;min-height:48px;}
+
+  .two-up{display:flex;gap:12px;}
+  .two-up .btn{flex:1;}
+
+  /* welcome illustration mark */
+  .mark{
+    width:96px;height:96px;border-radius:28px;background:var(--clay);
+    display:flex;align-items:center;justify-content:center;margin:24px 0 4px;
+    box-shadow:var(--shadow);
+  }
+  .mark svg{width:54px;height:54px;}
+
+  /* checklist card (load van) */
+  .card{
+    background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);
+    padding:8px 18px;margin:14px 0;
+  }
+  .row{
+    display:flex;align-items:center;gap:14px;padding:16px 2px;
+    border-bottom:1px solid var(--hairline);font-size:19px;font-weight:700;
+  }
+  .row:last-child{border-bottom:none;}
+  .qty{margin-left:auto;background:var(--paper);border-radius:12px;padding:4px 12px;font-weight:800;color:var(--clay);font-size:18px;}
+  .check{
+    width:30px;height:30px;border-radius:9px;border:2.5px solid var(--hairline);
+    flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    background:var(--teal);border-color:var(--teal);
+  }
+  .check svg{width:18px;height:18px;stroke:#fff;}
+
+  /* progress trail (signature element) */
+  .trail{display:flex;align-items:center;gap:7px;margin:16px 0 4px;}
+  .trail .seg{height:9px;border-radius:6px;flex:1;background:var(--hairline);transition:background .4s ease;}
+  .trail .seg.done{background:var(--teal);}
+  .trail .seg.current{background:var(--clay);}
+  .progress-label{font-size:16px;font-weight:800;color:var(--muted);margin:2px 0 0;}
+
+  /* stop card */
+  .stopname{font-size:31px;font-weight:900;letter-spacing:-.02em;margin:10px 0 2px;}
+  .addr{display:flex;align-items:flex-start;gap:8px;font-size:18px;font-weight:700;color:var(--ink);margin:0 0 14px;}
+  .addr svg{width:20px;height:20px;flex:0 0 auto;margin-top:2px;fill:var(--clay);}
+
+  .navlink{
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    background:var(--teal-soft);color:var(--teal);border-radius:var(--r-md);
+    min-height:54px;font-weight:800;font-size:18px;margin-bottom:14px;text-decoration:none;cursor:pointer;
+    transition:transform .12s ease;
+  }
+  .navlink:active{transform:scale(.97);}
+  .navlink svg{width:22px;height:22px;fill:var(--teal);}
+
+  .note{
+    background:var(--amber-soft);border-radius:var(--r-md);padding:16px 18px;margin-bottom:14px;
+    font-size:18px;font-weight:700;line-height:1.4;display:flex;gap:12px;
+  }
+  .note svg{width:24px;height:24px;flex:0 0 auto;fill:var(--amber);margin-top:1px;}
+
+  .meals-title{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:4px 2px 8px;}
+  .meal{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--hairline);font-size:19px;font-weight:700;}
+  .meal:last-child{border-bottom:none;}
+  .meal .dot{width:12px;height:12px;border-radius:50%;background:var(--clay);flex:0 0 auto;}
+
+  .concern{
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    background:transparent;border:none;color:var(--concern);font-family:inherit;
+    font-size:17px;font-weight:800;cursor:pointer;width:100%;min-height:52px;margin-top:6px;
+  }
+  .concern svg{width:21px;height:21px;fill:var(--concern);}
+
+  /* finish */
+  .celebrate{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;}
+  .bigheart{width:120px;height:120px;border-radius:50%;background:var(--teal-soft);display:flex;align-items:center;justify-content:center;margin-bottom:18px;animation:pop .6s cubic-bezier(.2,.9,.3,1.4);}
+  .bigheart svg{width:64px;height:64px;fill:var(--teal);}
+  @keyframes pop{0%{transform:scale(.4);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  @media(prefers-reduced-motion:reduce){.bigheart{animation:none;}}
+  .stat{font-size:54px;font-weight:900;color:var(--teal);line-height:1;margin:4px 0;}
+  .statlabel{font-size:19px;font-weight:700;color:var(--muted);}
+
+  /* toast (invisible-error reassurance) */
+  .toast{
+    position:absolute;left:18px;right:18px;bottom:104px;
+    background:var(--ink);color:#fff;border-radius:16px;padding:14px 18px;
+    font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px;
+    box-shadow:var(--shadow);opacity:0;transform:translateY(16px);
+    transition:opacity .3s ease,transform .3s ease;pointer-events:none;z-index:20;
+  }
+  .toast.show{opacity:1;transform:none;}
+  .toast svg{width:22px;height:22px;flex:0 0 auto;}
+
+  /* concern sheet */
+  .sheet-bg{position:absolute;inset:0;background:rgba(30,20,12,.45);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:30;}
+  .sheet-bg.show{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:absolute;left:0;right:0;bottom:0;background:var(--surface);
+    border-radius:28px 28px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom));
+    transform:translateY(100%);transition:transform .3s ease;z-index:31;
+  }
+  .sheet.show{transform:none;}
+  .sheet h2{font-size:24px;font-weight:900;margin:0 0 4px;}
+  .sheet p{font-size:17px;color:var(--muted);font-weight:600;margin:0 0 16px;}
+  .opt{width:100%;text-align:left;background:var(--paper);border:none;border-radius:14px;padding:16px 18px;font-family:inherit;font-size:18px;font-weight:800;margin-bottom:10px;cursor:pointer;color:var(--ink);}
+  .opt:active{background:var(--hairline);}
+
+  /* help button */
+  .help{position:absolute;top:54px;right:18px;z-index:15;background:var(--surface);border:1px solid var(--hairline);border-radius:999px;padding:8px 14px;font-family:inherit;font-size:14px;font-weight:800;color:var(--clay);box-shadow:var(--shadow-sm);cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .help svg{width:16px;height:16px;fill:var(--clay);}
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="statusbar">
+    <span id="clock">8:08</span>
+    <span class="dots">5G<span class="pill">60</span></span>
+  </div>
+
+  <div class="screens">
+
+    <!-- 1. WELCOME -->
+    <section class="screen active" id="s-welcome">
+      <div class="eyebrow">Meals on Wheels · Greater Spokane</div>
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 11h14M5 11a7 7 0 0114 0M12 4V2M3 11v2a2 2 0 002 2h14a2 2 0 002-2v-2M7 18h10" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1>Good morning,<br>Maria.</h1>
+      <p class="lead">You have <b style="color:var(--ink)">4 stops</b> today &mdash; 8 meals for 4 neighbors.</p>
+      <p class="lead" style="font-size:17px">It's a clear morning out there. Drive safe.</p>
+      <div class="spacer"></div>
+      <div class="footer">
+        <button class="btn btn-primary" onclick="go('s-load')">Start my route &rarr;</button>
+      </div>
+    </section>
+
+    <!-- 2. LOAD VAN -->
+    <section class="screen" id="s-load">
+      <div class="eyebrow">Step 1 · At the kitchen</div>
+      <h1>Load your van</h1>
+      <p class="lead">Pick these up before you head out.</p>
+      <div class="card">
+        <div class="row">Hot meals <span class="qty">4</span></div>
+        <div class="row">Diabetic meal <span class="qty">1</span></div>
+        <div class="row">Cold drinks <span class="qty">3</span></div>
+        <div class="row">Supplement shake <span class="qty">1</span></div>
+      </div>
+      <p class="lead" style="font-size:16px">Tap the button once everything's in the van.</p>
+      <div class="spacer"></div>
+      <div class="footer">
+        <button class="btn btn-primary" onclick="loadVan()">My van is loaded &mdash; let's go</button>
+      </div>
+    </section>
+
+    <!-- 3. STOP (dynamic) -->
+    <section class="screen" id="s-stop">
+      <button class="help" onclick="openSheet()"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2zm0-4h-2c0-3 3-2.5 3-5a2 2 0 10-4 0H8a4 4 0 118 0c0 2.5-3 3-3 5z"/></svg>Need help?</button>
+      <div class="trail" id="trail"></div>
+      <p class="progress-label" id="progress">Stop 1 of 4</p>
+      <div class="stopname" id="stopname">Eleanor Hartley</div>
+      <div class="addr"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6.5a2.5 2.5 0 010 5z"/></svg><span id="stopaddr">1247 W Sharp Ave, Spokane</span></div>
+      <div class="navlink" onclick="navToast()"><svg viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 2.5 2.5 7L21 3z"/></svg>Navigate there</div>
+      <div class="note" id="stopnote"><svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 6l6 11H6l6-11zm-1 4h2v3h-2zm0 4h2v2h-2z"/></svg><span id="stopnotetext">Knock loudly &mdash; hard of hearing. Leave at the door if there's no answer.</span></div>
+      <div class="meals-title">Meals for this stop</div>
+      <div id="stopmeals"></div>
+      <button class="concern" onclick="openSheet()"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2zm0-4h-2V7h2z"/></svg>Something doesn't seem right</button>
+      <div class="spacer"></div>
+      <div class="footer">
+        <div class="two-up">
+          <button class="btn btn-amber" onclick="markStop('no-answer')">No answer</button>
+          <button class="btn btn-teal" onclick="markStop('delivered')">Delivered &check;</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. FINISH -->
+    <section class="screen" id="s-finish">
+      <div class="celebrate">
+        <div class="bigheart"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 4 2.3.8-1.1 2-2.3 4-2.3 3.5 0 5 3.5 3.5 6.5C19 16.4 12 21 12 21z"/></svg></div>
+        <div class="stat" id="finishcount">8</div>
+        <div class="statlabel">meals delivered today</div>
+        <h1 style="margin-top:22px;font-size:28px">Thank you, Maria.</h1>
+        <p class="lead" id="finishline" style="font-size:18px">You reached every neighbor on your route. That's a good day.</p>
+      </div>
+      <div class="footer">
+        <button class="btn btn-primary" onclick="restart()">Back to start</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#7ED9C3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="toasttext">Saved</span></div>
+
+  <!-- concern sheet -->
+  <div class="sheet-bg" id="sheetbg" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <h2>Let us know</h2>
+    <p>We'll have the office follow up. You don't need to do anything else.</p>
+    <button class="opt" onclick="reportConcern('No one answered and I'm worried')">No one answered &mdash; I'm worried</button>
+    <button class="opt" onclick="reportConcern('They didn't seem well')">They didn't seem well</button>
+    <button class="opt" onclick="reportConcern('I need to talk to the office')">I need to call the office</button>
+    <button class="opt" onclick="reportConcern('Wrong address or details')">Address or details look wrong</button>
+    <button class="btn btn-ghost" onclick="closeSheet()" style="margin-top:4px">Cancel</button>
+  </div>
+
+</div>
+
+<script>
+  const stops = [
+    {name:"Eleanor Hartley", addr:"1247 W Sharp Ave, Spokane",
+     note:"Knock loudly \u2014 hard of hearing. Leave at the door if there's no answer.",
+     meals:["Hot meal","Cold drink"]},
+    {name:"James Okafor", addr:"822 E Mission Ave, Spokane",
+     note:"Friendly dog in the yard, very gentle. Use the side gate.",
+     meals:["Hot meal","Diabetic meal"]},
+    {name:"Dorothy Nguyen", addr:"415 S Cedar St, Spokane",
+     note:"Ring the bell twice. Please hand the meal to her directly.",
+     meals:["Hot meal","Cold drink","Supplement shake"]},
+    {name:"Walter Reyes", addr:"90 E 14th Ave, Spokane",
+     note:"Uses a wheelchair \u2014 please allow a little extra time at the door.",
+     meals:["Hot meal","Cold drink"]}
+  ];
+
+  let current = 0;
+  let delivered = 0;
+  let mealsDelivered = 0;
+
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelector('.screens').scrollTop = 0;
+  }
+
+  function buildTrail(){
+    const t = document.getElementById('trail');
+    t.innerHTML='';
+    stops.forEach((s,i)=>{
+      const seg=document.createElement('div');
+      seg.className='seg'+(i<current?' done':(i===current?' current':''));
+      t.appendChild(seg);
+    });
+  }
+
+  function renderStop(){
+    const s = stops[current];
+    document.getElementById('progress').textContent = `Stop ${current+1} of ${stops.length}`;
+    document.getElementById('stopname').textContent = s.name;
+    document.getElementById('stopaddr').textContent = s.addr;
+    document.getElementById('stopnotetext').textContent = s.note;
+    const m = document.getElementById('stopmeals');
+    m.innerHTML='';
+    s.meals.forEach(meal=>{
+      const row=document.createElement('div');
+      row.className='meal';
+      row.innerHTML=`<span class="dot"></span>${meal}`;
+      m.appendChild(row);
+    });
+    buildTrail();
+  }
+
+  function loadVan(){
+    showToast("All set \u2014 your route is ready");
+    setTimeout(()=>{ current=0; delivered=0; mealsDelivered=0; renderStop(); go('s-stop'); }, 700);
+  }
+
+  function markStop(type){
+    if(type==='delivered'){
+      delivered++;
+      mealsDelivered += stops[current].meals.length;
+      showToast("Saved \u2014 will update when you're back on signal");
+    } else {
+      showToast("Marked. We'll check in on " + stops[current].name.split(' ')[0] + ".");
+    }
+    setTimeout(()=>{
+      current++;
+      if(current >= stops.length){
+        finish();
+      } else {
+        renderStop();
+        document.querySelector('.screens').scrollTop = 0;
+      }
+    }, 850);
+  }
+
+  function finish(){
+    document.getElementById('finishcount').textContent = mealsDelivered;
+    const missed = stops.length - delivered;
+    document.getElementById('finishline').textContent = missed===0
+      ? "You reached every neighbor on your route. That's a good day."
+      : `You delivered to ${delivered} of ${stops.length} neighbors. We'll follow up on the ${missed} you couldn't reach.`;
+    go('s-finish');
+  }
+
+  function restart(){ current=0; delivered=0; mealsDelivered=0; go('s-welcome'); }
+
+  let toastTimer;
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    document.getElementById('toasttext').textContent=msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+  }
+  function navToast(){ showToast("Opening directions to this stop\u2026"); }
+
+  function openSheet(){ document.getElementById('sheetbg').classList.add('show'); document.getElementById('sheet').classList.add('show'); }
+  function closeSheet(){ document.getElementById('sheetbg').classList.remove('show'); document.getElementById('sheet').classList.remove('show'); }
+  function reportConcern(msg){ closeSheet(); showToast("Thank you \u2014 the office has been notified"); }
+
+  // live-ish clock for realism
+  function tick(){
+    const d=new Date();
+    let h=d.getHours(), m=d.getMinutes();
+    const hh = ((h%12)||12);
+    document.getElementById('clock').textContent = `${hh}:${m<10?'0'+m:m}`;
+  }
+  tick(); setInterval(tick,15000);
+</script>
+</body>
+</html>
